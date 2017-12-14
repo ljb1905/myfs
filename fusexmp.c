@@ -374,22 +374,33 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
     struct fuse_file_info *fi)
 {
-  char fullpath[PATH_MAX];
-  int fd;
-  int res;
-
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
+  char fullpaths[2][PATH_MAX];
+  int fd; //chk
+  int res; //chk
+  int sep=512; //seperate
+  int area = (int)offset/sep;
   (void) fi;
-  fd = open(fullpath, O_RDONLY);
-  if (fd == -1)
-    return -errno;
 
-  res = pread(fd, buf, size, offset);
+  sprintf(fullpaths[0],"%s%s",global_context.driveA,path);
+  sprintf(fullpaths[1],"%s%s",global_context.driveB,path);
+  for(res=0;res<size;area++)
+  {
+    int save = area%2;
+    int num = area/2;
+    fd = open(fullpaths[save], O_RDONLY);
+    if (fd==-1)
+      return -errno;
+    int chk = pread(fd,buf+res,sep,num*sep);// -1,0 == can't read
+    // fd == file descriptor,  offset == pos (begin of file)
+    close(fd);
+    if(chk==-1) 
+      return -errno;
+    else if(chk==0)
+      return res;
+    res += chk;
+  }
   if (res == -1)
     res = -errno;
-
-  close(fd);
   return res;
 }
 
