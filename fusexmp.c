@@ -410,26 +410,28 @@ static int xmp_write(const char *path, const char *buf, size_t size,
   char fullpaths[2][PATH_MAX];
   int fd;
   int res;
-
+  int sep=512;
+  int area = (int)offset/sep;
   (void) fi;
 
   sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
   sprintf(fullpaths[1], "%s%s", global_context.driveB, path);
 
-  for (int i = 0; i < 2; ++i) {
-    const char* fullpath = fullpaths[i];
-
-    fd = open(fullpath, O_WRONLY);
-    if (fd == -1)
-      return -errno;
-
-    res = pwrite(fd, buf, size, offset);
-    if (res == -1)
-      res = -errno;
-
-    close(fd);
-  }
-
+  int save = area%2;
+  int start = (area+1)*sep-offset;
+  int num = area/2;
+  int min;
+  if(start<size)
+    min=start;
+  else 
+    min=size;
+  fd = open(fullpaths[save], O_WRONLY);
+  if (fd == -1)
+    return -errno;
+  res = pwrite(fd, buf, min, num*sep+sep-start);
+  if (res == -1)
+    res = -errno;
+  close(fd);
   return res;
 }
 
