@@ -55,17 +55,21 @@ static struct {
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
-  char fullpath[PATH_MAX];
-	int res;
+  char fullpaths[2][PATH_MAX];
+  sprintf(fullpaths[0],"%s%s", global_context.driveA, path);
+  sprintf(fullpaths[1],"%s%s", global_context.driveB, path);
 
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
-
-	res = lstat(fullpath, stbuf);
-	if (res == -1)
-		return -errno;
-
-	return 0;
+  struct stat sc;
+  int res;
+  //lstat(a,b) -> a state to b
+  res = lstat(fullpaths[0], stbuf);
+    if(res==-1) 
+      return -errno;
+  res = lstat(fullpaths[1], &sc);
+    if(res==-1)
+      return -errno;
+  stbuf->st_size+=sc.st_size;
+  return 0;
 }
 
 static int xmp_access(const char *path, int mask)
