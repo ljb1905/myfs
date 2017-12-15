@@ -66,8 +66,8 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
     if(res==-1) 
       return -errno;
   res = lstat(fullpaths[1], &sc);
-    if(res==-1)
-      return -errno;
+  //  if(res==-1)
+  //    return -errno;
   stbuf->st_size+=sc.st_size;
   return 0;
 }
@@ -393,11 +393,11 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
     int chk = pread(fd,buf+res,sep,num*sep);// -1,0 == can't read
     // fd == file descriptor,  offset == pos (begin of file)
     close(fd);
+    res += chk;
     if(chk==-1) 
       return -errno;
     else if(chk==0)
       return res;
-    res += chk;
   }
   if (res == -1)
     res = -errno;
@@ -525,12 +525,12 @@ static int xmp_setxattr(const char *path, const char *name, const char *value,
 static int xmp_getxattr(const char *path, const char *name, char *value,
     size_t size)
 {
-  char fullpath[PATH_MAX];
+  char fullpaths[2][PATH_MAX];
 
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
+  sprintf(fullpaths[0],"%s%s",global_context.driveA,path);
+  sprintf(fullpaths[1],"%s%s",global_context.driveB,path);
 
-  int res = lgetxattr(fullpath, name, value, size);
+  int res = lgetxattr(fullpaths[0], name, value, size);
   if (res == -1)
     return -errno;
   return res;
@@ -538,12 +538,13 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 
 static int xmp_listxattr(const char *path, char *list, size_t size)
 {
-  char fullpath[PATH_MAX];
+  char fullpaths[2][PATH_MAX];
 
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
+  sprintf(fullpaths[0],"%s%s",global_context.driveA,path);
+  sprintf(fullpaths[1],"%s%s",global_context.driveB,path);
 
-  int res = llistxattr(fullpath, list, size);
+
+  int res = llistxattr(fullpaths[0], list, size);
   if (res == -1)
     return -errno;
   return res;
